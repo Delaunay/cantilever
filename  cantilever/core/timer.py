@@ -1,21 +1,46 @@
 import sys
 import time
 from contextlib import contextmanager
+from .statstream import StatStream
+
 
 profile = dict()
 
 
+
+class Value:
+    def __init__(self) -> None:
+        self.value = None
+
+    def set(self, value):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+
+class StatStreamValue:
+    def __init__(self) -> None:
+        self.value = StatStream(0)
+
+    def set(self, value):
+        self.value.update(value, weight=1)
+
+    def get(self, value):
+        return self.value.current_obs
+
+
 class TimerGroup:
-    def __init__(self, name) -> None:
+    def __init__(self, name, value_type=Value) -> None:
         self.start = None
         self.end = None
         self.name = name
-        self.timing = None
+        self.timing = value_type()
         self.subgroups = dict()
 
     def latest(self):
         if self.end:
-            return self.end - self.start
+            return self.timing.get()
 
         return time.time() - self.start
 
@@ -29,7 +54,7 @@ class TimerGroup:
     def __exit__(self, *args):
         global timer_builder
         self.end = time.time()
-        self.timing = self.end - self.start
+        self.timing.set(self.end - self.start)
 
         if timer_builder:
             timer_builder.pop()
@@ -61,6 +86,15 @@ def timeit(name):
 
     with timer.timeit(name) as timer:
         yield timer
+
+
+def timeitdec(func):
+    def _(*args, **kwargs):
+        with timeit(func.__name__):
+            return func(*args, **kwargs)
+    
+    return _
+
 
 
 def show_timings():
