@@ -8,6 +8,7 @@
 *.log
 *.pkl
 *.lock
+magnets.txt
 
 # StarUML documentation
 *.mdj

@@ -106,3 +106,10 @@ def show_timings():
     timer = timer_builder[0]
     timer.__exit__()
     timer.show()
+
+
+
+# 
+from multiprocessing import Pool
+
+result = Pool().apply_async()
