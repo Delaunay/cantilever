@@ -1,7 +1,6 @@
 import math
 import json
 
-from multiprocessing import Value
 from multiprocessing.sharedctypes import Value
 from ctypes import Structure, c_double, c_int
 

@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, List
 import os.path
 from benchutils.statstream import StatStream
 
@@ -65,9 +65,9 @@ class PrintTable:
             self.print_fun(' ' * missing + str + end, end='')
 
         if align == 'center':
-            r = missing // 2
-            l = r + missing % 2
-            self.print_fun(' ' * l + str + ' ' * r + end, end='')
+            right = missing // 2
+            left = right + missing % 2
+            self.print_fun(' ' * left + str + ' ' * right + end, end='')
 
         if align is None:
             self.print_fun(str + end, end='')

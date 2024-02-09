@@ -59,32 +59,54 @@ class TimerGroup:
         if timer_builder:
             timer_builder.pop()
 
-    def show(self, depth=1):
-        col = 40 - depth
-        idt = depth * " "
-        l = max(col - len(self.name), 0)
-        sep = {0: "_", 1: ".", 2: " "}[depth % 3]
-        
+    def _header(self):
+        if isinstance(self.timing, StatStreamValue):
+            header = [
+                "|", "{:>8}".format('avg'), 
+                "|", "{:>8}".format("total"), 
+                "|", "{:>8}".format("sd"), 
+                "|", "{:>8}".format("count"),
+            ]
+            print(f"# {" " * 40} {' '.join(header)}")
+        else:
+            print(f"# {" " * 40} | latest")
+            
+    def _stats(self):
         if isinstance(self.timing, StatStreamValue):
             stat: StatStream = self.timing.value
             stats = [
-                f"{stat.avg:8.2f}",
-                f"{stat.total:8.2f}",
-                f"{stat.sd:8.2f}",
-                f"{stat.count:8.2f}",
+                "|", f"{stat.avg:8.2f}",
+                "|", f"{stat.total:8.2f}",
+                "|", f"{stat.sd:8.2f}",
+                "|", f"{stat.count:8.2f}",
             ]
+            return ' '.join(stats)
+
+        return f"{self.latest():5.2f}"
             
-            if depth == 1:
-                header = ["avg", "total", "sd", "count"]
-                print(f"{idt}{" " * 40} {' '.join("{:>8}".format(arg) for arg in header )}")
-            
-            print(f"{idt}{self.name} {sep * l} {' '.join(stats)}")
-        else:
-            print(f"{idt}{self.name} {sep * l} {self.latest():5.2f}")
+    def show(self, depth=1):
+        col = 40 - depth
+        idt = depth * " "
+        length = max(col - len(self.name), 0)
+        sep = {0: "_", 1: ".", 2: " "}[depth % 3]
         
+        if depth == 1:
+            self._header()
+                
+        print(f"#{idt}{self.name} {sep * length} {self._stats()}")
+
         if len(self.subgroups) > 0:
             for _, v in self.subgroups.items():
                 v.show(depth + 1)
+
+    def iterator(self, iterator):
+        while True:
+            with self.timeit("next"):
+                try:
+                    batch = next(iterator)
+                except StopIteration:
+                    return
+            yield batch
 
     def timeit(self, name):
         timer = self.subgroups.get(name)

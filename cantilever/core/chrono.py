@@ -212,19 +212,19 @@ def show_eta(i: int, n: int, timer: StatStream, end='\n'):
 
 if __name__ == '__main__':
 
-    chrono = MultiStageChrono(0, disabled=False)
+    timer = MultiStageChrono(0, disabled=False)
 
-    with chrono.time('all', verbose=True):
+    with timer.time('all', verbose=True):
         for i in range(0, 10):
 
-            with chrono.time('forward_back', verbose=True) as timer:
-                with chrono.time('forward', verbose=True):
+            with timer.time('forward_back', verbose=True) as timer:
+                with timer.time('forward', verbose=True):
                     time.sleep(1)
 
                     if i % 2 == 0:
                         time.sleep(0.25)
 
-                with chrono.time('backward', verbose=True, skip_obs=3):
+                with timer.time('backward', verbose=True, skip_obs=3):
                     time.sleep(1)
 
                     if i % 2 == 0:
@@ -233,13 +233,13 @@ if __name__ == '__main__':
         show_eta(i, 10, timer)
 
     print()
-    chrono.report()
+    timer.report()
     print(chrono.to_json(base={'main': 1}, indent='   '))
 
     print()
-    chrono.report(format='json')
+    timer.report(format='json')
 
-    @time_this(chrono, verbose=True)
+    @time_this(timer, verbose=True)
     def test():
         time.sleep(1)
 

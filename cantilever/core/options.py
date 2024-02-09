@@ -23,8 +23,8 @@ def load_app_configuration(name, author, file):
 def save_app_configuration(name, author, file, configuration):
     filename = os.path.join(user_config_dir(name, author), file)
 
-    with open(filename, 'w') as f:
-        json.dump(configuration, file)
+    with open(filename, 'w') as fp:
+        json.dump(configuration, fp)
 
 
 def namespaced_option(namespace):
