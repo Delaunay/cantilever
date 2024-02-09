@@ -1,6 +1,7 @@
 global-exclude *.pyc
 global-exclude __pycache__
 recursive-include cantilever/* *.json
+recursive-include cantilever *.py
 include LICENSE
 include requirements.txt
 
