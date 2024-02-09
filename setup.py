@@ -10,10 +10,6 @@ with open("cantilever/core/__init__.py") as file:
             version = line.split("=")[1].strip().replace('"', "")
             break
 
-assert (
-    os.path.exists(os.path.join("cantilever", "__init__.py")) is False
-), "cantilever is a namespace not a module"
-
 extra_requires = {"plugins": ["importlib_resources"]}
 extra_requires["all"] = sorted(set(sum(extra_requires.values(), [])))
 
@@ -41,10 +37,11 @@ if __name__ == "__main__":
         ],
         setup_requires=["setuptools"],
         install_requires=["importlib_resources"],
-        namespace_packages=[
-            "cantilever",
-            "cantilever.plugins",
-        ],
+        # deprecated
+        # namespace_packages=[
+        #     "cantilever",
+        #     "cantilever.plugins",
+        # ],
         package_data={
             "cantilever.data": [
                 "cantilever/data",
