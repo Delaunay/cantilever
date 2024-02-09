@@ -26,12 +26,12 @@ class StatStreamValue:
     def set(self, value):
         self.value.update(value, weight=1)
 
-    def get(self, value):
+    def get(self):
         return self.value.current_obs
 
 
 class TimerGroup:
-    def __init__(self, name, value_type=Value) -> None:
+    def __init__(self, name, value_type=StatStreamValue) -> None:
         self.start = None
         self.end = None
         self.name = name
@@ -64,15 +64,35 @@ class TimerGroup:
         idt = depth * " "
         l = max(col - len(self.name), 0)
         sep = {0: "_", 1: ".", 2: " "}[depth % 3]
-
-        print(f"{idt}{self.name} {sep * l} {self.latest():5.2f}")
+        
+        if isinstance(self.timing, StatStreamValue):
+            stat: StatStream = self.timing.value
+            stats = [
+                f"{stat.avg:8.2f}",
+                f"{stat.total:8.2f}",
+                f"{stat.sd:8.2f}",
+                f"{stat.count:8.2f}",
+            ]
+            
+            if depth == 1:
+                header = ["avg", "total", "sd", "count"]
+                print(f"{idt}{" " * 40} {' '.join("{:>8}".format(arg) for arg in header )}")
+            
+            print(f"{idt}{self.name} {sep * l} {' '.join(stats)}")
+        else:
+            print(f"{idt}{self.name} {sep * l} {self.latest():5.2f}")
+        
         if len(self.subgroups) > 0:
             for _, v in self.subgroups.items():
                 v.show(depth + 1)
 
     def timeit(self, name):
-        timer = TimerGroup(name)
-        self.subgroups[name] = timer
+        timer = self.subgroups.get(name)
+        
+        if timer is None:
+            timer = TimerGroup(name)
+            self.subgroups[name] = timer
+            
         return timer
 
 
@@ -110,6 +130,6 @@ def show_timings():
 
 
 # 
-from multiprocessing import Pool
+# from multiprocessing import Pool
 
-result = Pool().apply_async()
+# result = Pool().apply_async()
