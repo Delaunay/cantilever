@@ -67,9 +67,9 @@ class TimerGroup:
                 "|", "{:>8}".format("sd"), 
                 "|", "{:>8}".format("count"),
             ]
-            print(f"# {" " * 40} {' '.join(header)}")
+            print(f"# {' ' * 40} {' '.join(header)}")
         else:
-            print(f"# {" " * 40} | latest")
+            print(f"# {' ' * 40} | latest")
             
     def _stats(self):
         if isinstance(self.timing, StatStreamValue):
