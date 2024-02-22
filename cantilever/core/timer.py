@@ -44,11 +44,13 @@ class StatStreamValue:
 
 
 class TimerGroup:
-    def __init__(self, name, value_type=StatStreamValue) -> None:
+    def __init__(self, name, value_type=StatStreamValue, show_on_end=False) -> None:
         self.start = None
         self.end = None
         self.name = name
         self.timing = value_type()
+        self.type = value_type
+        self.show_on_end = show_on_end
         self.subgroups = dict()
 
     def latest(self):
@@ -67,6 +69,9 @@ class TimerGroup:
         self.end = time.time()
         self.timing.set(self.end - self.start)
         _pop()
+        
+        if self.show_on_end:
+            self.show()
 
     def _header(self):
         if isinstance(self.timing, StatStreamValue):
@@ -117,11 +122,11 @@ class TimerGroup:
                     return
             yield batch
 
-    def timeit(self, name):
+    def timeit(self, name, show_on_end=False):
         timer = self.subgroups.get(name)
         
         if timer is None:
-            timer = TimerGroup(name)
+            timer = TimerGroup(name, value_type=self.type, show_on_end=show_on_end)
             self.subgroups[name] = timer
             
         return timer
@@ -150,10 +155,10 @@ def runtime():
 
 
 @contextmanager
-def timeit(name):
+def timeit(name, show_on_end=False):
     timer = _current()
 
-    with timer.timeit(name) as timer:
+    with timer.timeit(name, show_on_end=show_on_end) as timer:
         yield timer
 
 
@@ -181,10 +186,3 @@ def show_timings(force=False):
 
         timer.show()
         print("")
-
-
-
-# 
-# from multiprocessing import Pool
-
-# result = Pool().apply_async()
