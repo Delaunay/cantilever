@@ -1,13 +1,10 @@
-import time
 import json
+import time
+from math import log10, sqrt
+from typing import Callable, Dict, List
 
-from .statstream import StatStream
 from .report import print_table
-
-from math import sqrt
-from math import log10
-from typing import List, Dict
-from typing import Callable
+from .statstream import StatStream
 
 
 def chrono(func: Callable):
@@ -15,8 +12,9 @@ def chrono(func: Callable):
         start = time.time()
         value = func(*args, **kwargs)
         t = time.time() - start
-        print('{:>30} ran in {:10.4f} s'.format(func.__name__, t))
+        print(f"{func.__name__:>30} ran in {t:10.4f} s")
         return value
+
     return chrono_decorator
 
 
@@ -33,10 +31,19 @@ class _DummyContext:
 
 class ChronoContext:
     """
-        sync is a function that can be set to make the timer wait before ending.
-        This is useful when timing async calls like cuda calls
+    sync is a function that can be set to make the timer wait before ending.
+    This is useful when timing async calls like cuda calls
     """
-    def __init__(self, name, stream: StatStream, sync: Callable, parent, verbose=False, endline='\n'):
+
+    def __init__(
+        self,
+        name,
+        stream: StatStream,
+        sync: Callable,
+        parent,
+        verbose=False,
+        endline="\n",
+    ):
         self.name = name
         self.stream = stream
         self.start = 0
@@ -51,7 +58,7 @@ class ChronoContext:
         self.parent.depth += 1
         self.sync()
 
-        #if self.verbose:
+        # if self.verbose:
         #    print(f'{" " * self.depth * 2} [{self.depth:3d}] >  {self.name}', end='')
 
         self.start = time.time()
@@ -69,9 +76,9 @@ class ChronoContext:
         if self.verbose:
             print(
                 f'{self.newline}{" " * self.depth * 2} [{self.depth:3d}] <  {self.name:>30}: (obs: {self.stream.val:8.4f} s, '
-                f'avg: {self.stream.avg:8.4f}, '
-                f'cnt: {self.stream.count})',
-                end=''
+                f"avg: {self.stream.avg:8.4f}, "
+                f"cnt: {self.stream.count})",
+                end="",
             )
 
     @property
@@ -106,8 +113,8 @@ class MultiStageChrono:
             self.chronos[name] = val
 
         # inherit sync from parent
-        if kwargs.get('sync') is None:
-            kwargs['sync'] = self.sync
+        if kwargs.get("sync") is None:
+            kwargs["sync"] = self.sync
 
         return ChronoContext(name, val, parent=self, **kwargs)
 
@@ -120,12 +127,19 @@ class MultiStageChrono:
 
         return table
 
-    def report(self, *args, format='csv', **kwargs):
-        if format == 'csv':
+    def report(self, *args, format="csv", **kwargs):
+        if format == "csv":
             return self.report_csv(*args, **kwargs)
         print(self.to_json(*args, **kwargs))
 
-    def report_csv(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None, skip_header=False):
+    def report_csv(
+        self,
+        speed=False,
+        size=1,
+        file_name=None,
+        common: Dict[str, str] = None,
+        skip_header=False,
+    ):
         if self.disabled:
             return
 
@@ -137,10 +151,14 @@ class MultiStageChrono:
         common_header = list(map(lambda item: item[0], items))
         common = list(map(lambda item: item[1], items))
 
-        header = ['Stage', 'Average', 'Deviation', 'Min', 'Max', 'count']
+        header = ["Stage", "Average", "Deviation", "Min", "Max", "count"]
         header.extend(common_header)
 
-        table = self.make_table(common, lambda x: size / x) if speed else self.make_table(common)
+        table = (
+            self.make_table(common, lambda x: size / x)
+            if speed
+            else self.make_table(common)
+        )
         print_table(header, table, file_name, skip_header)
 
     def to_dict(self, base=None):
@@ -149,7 +167,7 @@ class MultiStageChrono:
             items = {}
 
         if self.name is not None:
-            items['name'] = self.name
+            items["name"] = self.name
 
         for key, stream in self.chronos.items():
             items[key] = stream.to_dict()
@@ -157,8 +175,8 @@ class MultiStageChrono:
         return items
 
     def to_json(self, base=None, *args, **kwargs):
-        if 'indent' not in kwargs:
-            kwargs['indent'] = '  '
+        if "indent" not in kwargs:
+            kwargs["indent"] = "  "
         return json.dumps(self.to_dict(base), *args, **kwargs)
 
 
@@ -169,6 +187,7 @@ def time_this(chrono, *cargs, **ckwargs):
                 return fun(*args, **kwargs)
 
         return wrapper
+
     return toplevel_decorator
 
 
@@ -179,52 +198,52 @@ def estimated_time_to_arrival(i: int, n: int, timer: StatStream):
         avg = timer.val
 
     eta = (n - i - 1) * avg
-    return eta, 2.95 * timer.sd * sqrt((n - i - 1))
+    return eta, 2.95 * timer.sd * sqrt(n - i - 1)
 
 
 def get_div_fmt(val: float):
-    div, fmt = 60, 'min'
+    div, fmt = 60, "min"
     if val < div:
         div = 1
-        fmt = 's'
+        fmt = "s"
     return div, fmt
 
 
-def show_eta(i: int, n: int, timer: StatStream, end='\n'):
+def show_eta(i: int, n: int, timer: StatStream, end="\n"):
     eta, offset = estimated_time_to_arrival(i, n, timer)
     size = int(log10(n) + 1)
 
     div, fmt = get_div_fmt(eta)
 
-    eta = f'{eta / div:6.2f} {fmt}'
+    eta = f"{eta / div:6.2f} {fmt}"
 
     div, fmt = get_div_fmt(offset)
-    conf = f'{offset / sqrt(div):6.2f} {fmt}'
+    conf = f"{offset / sqrt(div):6.2f} {fmt}"
 
-    total = ''
+    total = ""
     if timer.avg != 0:
         t = timer.avg * (timer.count + timer.drop_obs)
         div, fmt = get_div_fmt(t)
-        total = f' | Total {t / div:6.2f} {fmt}'
+        total = f" | Total {t / div:6.2f} {fmt}"
 
-    print(f'[{i:{size}d}/{n:{size}d}] Remaining {eta} +/- {conf}{total}', end=end)
+    print(f"[{i:{size}d}/{n:{size}d}] Remaining {eta} +/- {conf}{total}", end=end)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     timer = MultiStageChrono(0, disabled=False)
 
-    with timer.time('all', verbose=True):
+    with timer.time("all", verbose=True):
         for i in range(0, 10):
 
-            with timer.time('forward_back', verbose=True) as timer:
-                with timer.time('forward', verbose=True):
+            with timer.time("forward_back", verbose=True) as timer:
+                with timer.time("forward", verbose=True):
                     time.sleep(1)
 
                     if i % 2 == 0:
                         time.sleep(0.25)
 
-                with timer.time('backward', verbose=True, skip_obs=3):
+                with timer.time("backward", verbose=True, skip_obs=3):
                     time.sleep(1)
 
                     if i % 2 == 0:
@@ -234,15 +253,13 @@ if __name__ == '__main__':
 
     print()
     timer.report()
-    print(chrono.to_json(base={'main': 1}, indent='   '))
+    print(chrono.to_json(base={"main": 1}, indent="   "))
 
     print()
-    timer.report(format='json')
+    timer.report(format="json")
 
     @time_this(timer, verbose=True)
     def test():
         time.sleep(1)
 
     test()
-
-

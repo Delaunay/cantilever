@@ -1,11 +1,10 @@
 import sys
 import time
-from contextlib import contextmanager
 from collections import defaultdict
+from contextlib import contextmanager
 from threading import get_native_id
 
 from .statstream import StatStream
-
 
 profile = dict()
 
@@ -69,44 +68,52 @@ class TimerGroup:
         self.end = time.time()
         self.timing.set(self.end - self.start)
         _pop()
-        
+
         if self.show_on_end:
             self.show()
 
     def _header(self):
         if isinstance(self.timing, StatStreamValue):
             header = [
-                "|", "{:>8}".format('avg'), 
-                "|", "{:>8}".format("total"), 
-                "|", "{:>8}".format("sd"), 
-                "|", "{:>8}".format("count"),
+                "|",
+                "{:>8}".format("avg"),
+                "|",
+                "{:>8}".format("total"),
+                "|",
+                "{:>8}".format("sd"),
+                "|",
+                "{:>8}".format("count"),
             ]
             print(f"# {' ' * 40} {' '.join(header)}")
         else:
             print(f"# {' ' * 40} | latest")
-            
+
     def _stats(self):
         if isinstance(self.timing, StatStreamValue):
             stat: StatStream = self.timing.value
             stats = [
-                "|", f"{stat.avg:8.2f}",
-                "|", f"{stat.total:8.2f}",
-                "|", f"{stat.sd:8.2f}",
-                "|", f"{stat.count:8.2f}",
+                "|",
+                f"{stat.avg:8.2f}",
+                "|",
+                f"{stat.total:8.2f}",
+                "|",
+                f"{stat.sd:8.2f}",
+                "|",
+                f"{stat.count:8.2f}",
             ]
-            return ' '.join(stats)
+            return " ".join(stats)
 
         return f"{self.latest():5.2f}"
-            
+
     def show(self, depth=1):
         col = 40 - depth
         idt = depth * " "
         length = max(col - len(self.name), 0)
         sep = {0: "_", 1: ".", 2: " "}[depth % 3]
-        
+
         if depth == 1:
             self._header()
-                
+
         print(f"#{idt}{self.name} {sep * length} {self._stats()}")
 
         if len(self.subgroups) > 0:
@@ -124,11 +131,11 @@ class TimerGroup:
 
     def timeit(self, name, show_on_end=False):
         timer = self.subgroups.get(name)
-        
+
         if timer is None:
             timer = TimerGroup(name, value_type=self.type, show_on_end=show_on_end)
             self.subgroups[name] = timer
-            
+
         return timer
 
 
@@ -166,7 +173,7 @@ def timeitdec(func):
     def _(*args, **kwargs):
         with timeit(func.__name__):
             return func(*args, **kwargs)
-    
+
     return _
 
 

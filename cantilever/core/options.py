@@ -1,9 +1,8 @@
-import os
 import json
+import os
 from functools import partial
 
 from appdirs import user_config_dir
-
 
 
 def option(namespace, name, default=None):
@@ -14,7 +13,7 @@ def option(namespace, name, default=None):
 def load_app_configuration(name, author, file):
     filename = os.path.join(user_config_dir(name, author), file)
 
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         configuration = json.load(f)
 
     return configuration
@@ -23,12 +22,9 @@ def load_app_configuration(name, author, file):
 def save_app_configuration(name, author, file, configuration):
     filename = os.path.join(user_config_dir(name, author), file)
 
-    with open(filename, 'w') as fp:
+    with open(filename, "w") as fp:
         json.dump(configuration, fp)
 
 
 def namespaced_option(namespace):
     return partial(option, namespace)
-
-
-

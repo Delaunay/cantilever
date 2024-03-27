@@ -1,7 +1,6 @@
 import asyncio
+
 import win32clipboard
-
-
 
 
 async def iterate_overclipboard():
@@ -38,5 +37,5 @@ try:
     loop.run_until_complete(clipboard())
 finally:
     # see: https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_asyncgens
-    loop.run_until_complete(loop.shutdown_asyncgens())  
+    loop.run_until_complete(loop.shutdown_asyncgens())
     loop.close()

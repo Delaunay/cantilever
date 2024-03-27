@@ -28,7 +28,6 @@ def popen_reader(state: dict, function, args, shell=False):
         return -1
 
 
-
 class MongoInstance:
     def __init__(self, cmd, args) -> None:
         self.env = {}
@@ -51,8 +50,8 @@ class MongoInstance:
 
         try:
             self.proc = multiprocessing.Process(
-                target=popen_reader, 
-                args=(self.state, function, [self.cmd, *self.args]),
+                target=popen_reader,
+                args=(self.state, lambda *args: 0, [self.cmd, *self.args]),
             )
             self.proc.start()
             while self.proc.is_alive() and self.state.get("ready", 0) != 1:
@@ -69,4 +68,3 @@ class MongoInstance:
 
         while self.proc.is_alive():
             time.sleep(0.01)
-
