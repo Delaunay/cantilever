@@ -1,9 +1,17 @@
 import asyncio
 
-import win32clipboard
+try:
+    DELAYED_IMPORT_ERR = None
+    import win32clipboard
+
+except ImportError as err:
+    DELAYED_IMPORT_ERR = err
 
 
 async def iterate_overclipboard():
+    if DELAYED_IMPORT_ERR:
+        raise DELAYED_IMPORT_ERR
+
     win32clipboard.OpenClipboard()
     previous = win32clipboard.GetClipboardData()
     win32clipboard.CloseClipboard()
@@ -32,10 +40,15 @@ async def clipboard():
             f.flush()
 
 
-loop = asyncio.get_event_loop()
-try:
-    loop.run_until_complete(clipboard())
-finally:
-    # see: https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_asyncgens
-    loop.run_until_complete(loop.shutdown_asyncgens())
-    loop.close()
+def main():
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(clipboard())
+    finally:
+        # see: https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.shutdown_asyncgens
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
+
+
+if __name__ == "__main__":
+    main()

@@ -35,7 +35,7 @@ if __name__ == "__main__":
             "cantilever.plugins.example",
         ],
         setup_requires=["setuptools"],
-        install_requires=["importlib_resources"],
+        install_requires=["importlib_resources", "appdirs"],
         # deprecated
         # namespace_packages=[
         #     "cantilever",

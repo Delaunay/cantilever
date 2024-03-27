@@ -1,7 +1,7 @@
 import os.path
 from typing import Any, List
 
-from benchutils.statstream import StatStream
+from cantilever.core.statstream import StatStream
 
 
 class UnEvenTable(Exception):

@@ -2,6 +2,7 @@ import sys
 import time
 from collections import defaultdict
 from contextlib import contextmanager
+from dataclasses import dataclass, field
 from threading import get_native_id
 
 from .statstream import StatStream
@@ -42,6 +43,18 @@ class StatStreamValue:
         return self.value.current_obs
 
 
+@dataclass
+class DisplayConfig:
+    decimal_format: str = "8.2"
+    col_size: int = 40
+    indent: str = " "
+    sep: dict = field(default_factory=lambda: {0: "_", 1: ".", 2: " "})
+    col_sep: str = "|"
+
+    def decimal_size(self):
+        return int(self.decimal_format.split(".")[0])
+
+
 class TimerGroup:
     def __init__(self, name, value_type=StatStreamValue, show_on_end=False) -> None:
         self.start = None
@@ -72,53 +85,59 @@ class TimerGroup:
         if self.show_on_end:
             self.show()
 
-    def _header(self):
+    def _header(self, config: DisplayConfig):
+        size = config.decimal_size()
+        col_sep = config.col_sep
+
         if isinstance(self.timing, StatStreamValue):
             header = [
-                "|",
-                "{:>8}".format("avg"),
-                "|",
-                "{:>8}".format("total"),
-                "|",
-                "{:>8}".format("sd"),
-                "|",
-                "{:>8}".format("count"),
+                col_sep,
+                f"{'avg':>{size}}",
+                col_sep,
+                f"{'total':>{size}}",
+                col_sep,
+                f"{'sd':>{size}}",
+                col_sep,
+                f"{'count':>{size}}",
             ]
             print(f"# {' ' * 40} {' '.join(header)}")
         else:
             print(f"# {' ' * 40} | latest")
 
-    def _stats(self):
+    def _stats(self, config: DisplayConfig):
+        df = config.decimal_format
+        col_sep = config.col_sep
+
         if isinstance(self.timing, StatStreamValue):
             stat: StatStream = self.timing.value
             stats = [
-                "|",
-                f"{stat.avg:8.2f}",
-                "|",
-                f"{stat.total:8.2f}",
-                "|",
-                f"{stat.sd:8.2f}",
-                "|",
-                f"{stat.count:8.2f}",
+                col_sep,
+                f"{stat.avg:{df}f}",
+                col_sep,
+                f"{stat.total:{df}f}",
+                col_sep,
+                f"{stat.sd:{df}f}",
+                col_sep,
+                f"{stat.count:{df}f}",
             ]
             return " ".join(stats)
 
         return f"{self.latest():5.2f}"
 
-    def show(self, depth=1):
-        col = 40 - depth
-        idt = depth * " "
+    def show(self, depth=1, config: DisplayConfig = DisplayConfig()):
+        col = config.col_size - depth
+        idt = depth * config.indent
         length = max(col - len(self.name), 0)
-        sep = {0: "_", 1: ".", 2: " "}[depth % 3]
+        sep = config.sep[depth % len(config.sep)]
 
         if depth == 1:
-            self._header()
+            self._header(config=config)
 
-        print(f"#{idt}{self.name} {sep * length} {self._stats()}")
+        print(f"#{idt}{self.name} {sep * length} {self._stats(config=config)}")
 
         if len(self.subgroups) > 0:
             for _, v in self.subgroups.items():
-                v.show(depth + 1)
+                v.show(depth + 1, config=config)
 
     def iterator(self, iterator):
         while True:
