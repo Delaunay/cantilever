@@ -29,3 +29,25 @@ cantilever
 
    pip install cantilever
 
+
+.. code-block:: python
+   
+   import time
+
+   from cantilever.core.timer import show_timings, timeit
+
+   with timeit("here"):
+       for _ in range(10):
+           with timeit("this"):
+               time.sleep(0.1)
+
+   show_timings(force=True)
+
+.. code-block:: text
+
+   Timings:
+   #                                          |      avg |    total |       sd |    count
+   # root ................................... |     1.00 |     1.00 |     0.00 |     1.00
+   #  here                                    |     1.00 |     1.00 |     0.00 |     1.00
+   #   this _________________________________ |     0.10 |     1.00 |     0.00 |    10.00
+
