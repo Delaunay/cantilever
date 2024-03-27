@@ -7,7 +7,7 @@ import pkgutil
 import importlib_resources
 
 __descr__ = "Python toolbox"
-__version__ = "0.0.2"
+__version__ = "0.1.0"
 __license__ = "BSD 3-Clause License"
 __author__ = "Setepenre"
 __author_email__ = "setepenre@outlook.com"
