@@ -196,7 +196,7 @@ def timeitdec(func):
     return _
 
 
-def show_timings(force=False):
+def show_timings(force=False, config: DisplayConfig = DisplayConfig()):
     if not force and "-xyz" not in sys.argv:
         return
 
@@ -210,5 +210,5 @@ def show_timings(force=False):
         except:
             pass
 
-        timer.show()
+        timer.show(config=config)
         print("")
