@@ -33,6 +33,11 @@ def metrics(source, observer, scheduler):
 
     rate_stream = source.pipe(ops.filter(filter_obj), ops.pairwise(), ops.map(rate))
 
+    # 
+    # In the case of pytorch we would need to sync which is a bit annoying to do
+    # Or use cuda event instead
+    # 
+    #
     rate_stream.subscribe(
         on_next=lambda value: print(value),
         on_error=lambda error: print("Error:", error),
@@ -71,11 +76,29 @@ def test_counters_queue():
 def test_counters_thread():
     from cantilever.core.perfcounter_thread import PerfCounter, Source
 
+    #
+    #   For cuda using events is better as it does not require us to 
+    #   sync to have the timing
+    #
     with PerfCounter(Source, (metrics,), qsize) as counter:
+        # events = []
         for _ in range(n):
+            # prev_start = start
+            # events.append(torch.cuda.Event(enable_timing=True, False, True))
+
             counter.push_object(name="batch", time=time.time_ns(), batch_size=1024)
             fake_work()
 
+        # for e in events:
+        #   e.synchronize()
+            
+        # timings = []
+        # for i in range(1, len(events)):
+        #   start = events[i - 1]
+        #   end = events[i]
+        #   
+        #   elapsed = start.elapsed_time(end)
+        #   timings.append(elapsed)
 
 def counters_nothing():
     s = time.time_ns()
