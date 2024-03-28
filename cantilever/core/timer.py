@@ -51,6 +51,9 @@ class DisplayConfig:
     sep: dict = field(default_factory=lambda: {0: "_", 1: ".", 2: " "})
     col_sep: str = "|"
 
+    def line_separator(self, line_no):
+        return self.sep[line_no % len(self.sep)]
+
     def decimal_size(self):
         return int(self.decimal_format.split(".")[0])
 
@@ -128,7 +131,7 @@ class TimerGroup:
         col = config.col_size - depth
         idt = depth * config.indent
         length = max(col - len(self.name), 0)
-        sep = config.sep[depth % len(config.sep)]
+        sep = config.line_separator(depth)
 
         if depth == 1:
             self._header(config=config)
