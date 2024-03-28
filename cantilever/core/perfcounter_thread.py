@@ -76,7 +76,7 @@ class WorkerStopped(Exception):
 class PerfCounter:
     def __init__(self, observer_cls, observer_args, size=30):
         self.queue = queue.Queue(size)
-        self.state = dict()
+        self.state = dict()             # <= this guy is relying on GIL
         self.worker = None
         self.size = size
         self.observer_cls = observer_cls

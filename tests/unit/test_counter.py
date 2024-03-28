@@ -83,22 +83,22 @@ def test_counters_thread():
     with PerfCounter(Source, (metrics,), qsize) as counter:
         # events = []
         for _ in range(n):
-            # prev_start = start
-            # events.append(torch.cuda.Event(enable_timing=True, False, True))
+            # events.append((torch.cuda.Event(enable_timing=True, False, True), batch_size))
 
             counter.push_object(name="batch", time=time.time_ns(), batch_size=1024)
             fake_work()
 
-        # for e in events:
+        # wait for the events to finish
+        # for e, _ in events:
         #   e.synchronize()
             
-        # timings = []
+        # perf = []
         # for i in range(1, len(events)):
-        #   start = events[i - 1]
-        #   end = events[i]
+        #   start, bs = events[i - 1]
+        #   end, _ = events[i]
         #   
         #   elapsed = start.elapsed_time(end)
-        #   timings.append(elapsed)
+        #   perf.append(bs / elapsed)
 
 def counters_nothing():
     s = time.time_ns()
