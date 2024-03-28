@@ -74,7 +74,7 @@ class WorkerStopped(Exception):
 
 
 class PerfCounter:
-    def __init__(self, observer_cls, observer_args, size=20000):
+    def __init__(self, observer_cls, observer_args, size=30):
         self.queue = queue.Queue(size)
         self.state = dict()
         self.worker = None

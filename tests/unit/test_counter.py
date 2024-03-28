@@ -4,6 +4,17 @@ import time
 from reactivex import operators as ops
 
 
+def fibonacci_of(nn):
+    # slow implementation so we can measure something
+    if nn in {0, 1}:
+        return nn
+    return fibonacci_of(nn - 1) + fibonacci_of(nn - 2)
+
+
+def fake_work():
+    fibonacci_of(28)
+
+
 def metrics(source, observer, scheduler):
     def rate(pair):
         start = pair[0]
@@ -36,40 +47,41 @@ def metrics(source, observer, scheduler):
 
 
 n = 60
+qsize = 200
 
 
 def test_counters_shm():
     from cantilever.core.perfcounter_shm import PerfCounter, Source
 
-    with PerfCounter(Source, (metrics,)) as counter:
+    with PerfCounter(Source, (metrics,), qsize) as counter:
         for _ in range(n):
             counter.push_object(name="batch", time=time.time_ns(), batch_size=1024)
-            time.sleep(0.1)
+            fake_work()
 
 
 def test_counters_queue():
     from cantilever.core.perfcounter_queue import PerfCounter, Source
 
-    with PerfCounter(Source, (metrics,)) as counter:
+    with PerfCounter(Source, (metrics,), qsize) as counter:
         for _ in range(n):
             counter.push_object(name="batch", time=time.time_ns(), batch_size=1024)
-            time.sleep(0.1)
+            fake_work()
 
 
 def test_counters_thread():
     from cantilever.core.perfcounter_thread import PerfCounter, Source
 
-    with PerfCounter(Source, (metrics,)) as counter:
+    with PerfCounter(Source, (metrics,), qsize) as counter:
         for _ in range(n):
             counter.push_object(name="batch", time=time.time_ns(), batch_size=1024)
-            time.sleep(0.1)
+            fake_work()
 
 
 def counters_nothing():
     s = time.time_ns()
 
     for _ in range(n):
-        time.sleep(0.1)
+        fake_work()
 
     e = time.time_ns()
 
@@ -79,9 +91,10 @@ def counters_nothing():
 
 
 if __name__ == "__main__":
+    target, elapsed = counters_nothing()
+
     test_counters_thread()
     test_counters_shm()
     test_counters_queue()
 
-    target, elapsed = counters_nothing()
     print(f"Target is {target} | {elapsed}")
