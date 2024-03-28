@@ -1,71 +1,55 @@
 import sys
 import time
 from contextlib import contextmanager
-from .statstream import StatStream
-
+from collections import defaultdict
+from threading import get_native_id
 
 profile = dict()
 
 
 
-class Value:
-    def __init__(self) -> None:
-        self.value = None
-
-    def set(self, value):
-        self.value = value
-
-    def get(self):
-        return self.value
+def _append(timer):
+    global timer_builder
+    timer_builder[get_native_id()].append(timer)
 
 
-class StatStreamValue:
-    def __init__(self) -> None:
-        self.value = StatStream(0)
-
-    def set(self, value):
-        self.value.update(value, weight=1)
-
-    def get(self, value):
-        return self.value.current_obs
+def _pop():
+    global timer_builder
+    if timer_builder:
+        timer_builder[get_native_id()].pop()
 
 
 class TimerGroup:
-    def __init__(self, name, value_type=Value) -> None:
+    def __init__(self, name) -> None:
         self.start = None
         self.end = None
         self.name = name
-        self.timing = value_type()
+        self.timing = None
         self.subgroups = dict()
 
     def latest(self):
         if self.end:
-            return self.timing.get()
+            return self.end - self.start
 
         return time.time() - self.start
 
     def __enter__(self):
-        global timer_builder
-
         self.start = time.time()
-        timer_builder.append(self)
+        _append(self)
         return self
 
     def __exit__(self, *args):
-        global timer_builder
         self.end = time.time()
-        self.timing.set(self.end - self.start)
-
-        if timer_builder:
-            timer_builder.pop()
+        self.timing = self.end - self.start
+        _pop()
 
     def show(self, depth=1):
         col = 40 - depth
         idt = depth * " "
-        l = max(col - len(self.name), 0)
+        lsize = max(col - len(self.name), 0)
         sep = {0: "_", 1: ".", 2: " "}[depth % 3]
 
-        print(f"{idt}{self.name} {sep * l} {self.latest():5.2f}")
+        print(f"{idt}{self.name} {sep * lsize} {self.latest():5.2f}")
         if len(self.subgroups) > 0:
             for _, v in self.subgroups.items():
                 v.show(depth + 1)
@@ -76,25 +60,25 @@ class TimerGroup:
         return timer
 
 
-timer_builder = []
-TimerGroup("root").__enter__(),
+timer_builder = defaultdict(list)
+
+
+def _current():
+    global timer_builder
+    timerlist = timer_builder[get_native_id()]
+
+    if len(timerlist) == 0:
+        TimerGroup(f"root: {get_native_id()}").__enter__()
+
+    return timerlist[-1]
 
 
 @contextmanager
 def timeit(name):
-    timer = timer_builder[-1]
+    timer = _current()
 
     with timer.timeit(name) as timer:
         yield timer
-
-
-def timeitdec(func):
-    def _(*args, **kwargs):
-        with timeit(func.__name__):
-            return func(*args, **kwargs)
-    
-    return _
-
 
 
 def show_timings():
@@ -103,13 +87,12 @@ def show_timings():
 
     print()
     print("Timings:")
-    timer = timer_builder[0]
-    timer.__exit__()
-    timer.show()
-
-
-
-# 
-from multiprocessing import Pool
-
-result = Pool().apply_async()
+    
+    for _, thread_group in timer_builder.items():
+        timer = thread_group[0]
+        try:
+            timer.__exit__()
+        except:
+            pass
+        timer.show()
+        print('')
