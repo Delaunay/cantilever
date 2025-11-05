@@ -3,22 +3,27 @@ import time
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from threading import get_native_id
+from threading import get_native_id, RLock
 
 from .statstream import StatStream
 
+lock = RLock ()
 profile = dict()
 
 
 def _append(timer):
-    global timer_builder
-    timer_builder[get_native_id()].append(timer)
+    with lock:
+        global timer_builder
+        timer_builder[get_native_id()].append(timer)
 
 
 def _pop():
-    global timer_builder
-    if timer_builder:
-        timer_builder[get_native_id()].pop()
+    with lock:
+        global timer_builder
+        if timer_builder:
+            group = timer_builder[get_native_id()]
+            if len(group) > 1:
+                group.pop()
 
 
 class Value:
@@ -50,9 +55,6 @@ class DisplayConfig:
     indent: str = " "
     sep: dict = field(default_factory=lambda: {0: "_", 1: ".", 2: " "})
     col_sep: str = "|"
-
-    def line_separator(self, line_no):
-        return self.sep[line_no % len(self.sep)]
 
     def decimal_size(self):
         return int(self.decimal_format.split(".")[0])
@@ -131,7 +133,7 @@ class TimerGroup:
         col = config.col_size - depth
         idt = depth * config.indent
         length = max(col - len(self.name), 0)
-        sep = config.line_separator(depth)
+        sep = config.sep[depth % len(config.sep)]
 
         if depth == 1:
             self._header(config=config)
@@ -170,11 +172,11 @@ def timeiterator(*args):
 
 
 def _current() -> TimerGroup:
-    global timer_builder
-    timerlist = timer_builder[get_native_id()]
-
-    if len(timerlist) == 0:
-        TimerGroup(f"root: {get_native_id()}").__enter__()
+    with lock:
+        global timer_builder
+        timerlist = timer_builder[get_native_id()]
+        if len(timerlist) == 0:
+            TimerGroup(f"root: {get_native_id()}").__enter__()
 
     return timerlist[-1]
 
@@ -199,19 +201,26 @@ def timeitdec(func):
     return _
 
 
-def show_timings(force=False, config: DisplayConfig = DisplayConfig()):
+def show_timings(force=False):
     if not force and "-xyz" not in sys.argv:
         return
 
     print()
     print("Timings:")
+    
+    if len(timer_builder) == 0:
+        print("No timings available")
+        return
 
     for _, thread_group in timer_builder.items():
+        if len(thread_group) == 0:
+            continue
+
         timer = thread_group[0]
         try:
             timer.__exit__()
         except:
             pass
 
-        timer.show(config=config)
+        timer.show()
         print("")
