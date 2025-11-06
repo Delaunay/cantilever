@@ -166,6 +166,11 @@ class TimerGroup:
 timer_builder = defaultdict(list)
 TimerGroup("root").__enter__()
 
+def reset():
+    global timer_builder
+    timer_builder = defaultdict(list)
+    TimerGroup("root").__enter__()
+
 
 def timeiterator(*args):
     return _current().iterator(*args)
