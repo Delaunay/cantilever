@@ -19,6 +19,7 @@ if __name__ == "__main__":
         extras_require=extra_requires,
         description="Python toolbox",
         long_description=(Path(__file__).parent / "README.rst").read_text(),
+        long_description_content_type="text/x-rst",
         author="Setepenre",
         author_email="setepenre@outlook.com",
         license="BSD 3-Clause License",

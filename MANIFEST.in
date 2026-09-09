@@ -14,4 +14,3 @@ exclude .pre-commit-config.yaml
 prune docs
 prune tests
 prune examples
-prune cantilever/plugins
